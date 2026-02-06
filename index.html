@@ -2,151 +2,261 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Tic Tac Toe AI - SON PROJECT</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SON PROJECT - Tic Tac Toe</title>
+
 <style>
-  body {
-    margin: 0;
-    height: 100vh;
-    background: #020617;
-    color: white;
-    font-family: Arial, sans-serif;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-  }
-  .logo {
-    font-size: 32px;
-    font-weight: bold;
-    color: #38bdf8;
-    margin-bottom: 10px;
-    letter-spacing: 3px;
-  }
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: radial-gradient(circle at top, #111, #000);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-family: Arial, sans-serif;
+}
+
+.logo {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #00f7ff;
+  text-shadow: 0 0 15px #00f7ff;
+  margin-bottom: 10px;
+}
+
+.score {
+  margin-bottom: 10px;
+  font-size: 1.1rem;
+}
+
+.controls {
+  margin-bottom: 10px;
+}
+
+button {
+  background: #00f7ff;
+  border: none;
+  padding: 8px 14px;
+  margin: 0 4px;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(3, 100px);
+  gap: 10px;
+}
+
+.cell {
+  width: 100px;
+  height: 100px;
+  border: 2px solid #00f7ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.cell:hover {
+  box-shadow: 0 0 15px #00f7ff;
+  transform: scale(1.05);
+}
+
+.status {
+  margin-top: 10px;
+  font-size: 1.1rem;
+}
+
+@media (max-width: 600px) {
   .board {
-    display: grid;
-    grid-template-columns: repeat(3, 100px);
-    gap: 10px;
+    grid-template-columns: repeat(3, 80px);
   }
   .cell {
-    width: 100px;
-    height: 100px;
-    background: #1e293b;
-    border-radius: 12px;
-    font-size: 48px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
+    width: 80px;
+    height: 80px;
+    font-size: 2.5rem;
   }
-  .cell:hover { background: #334155; }
-  .status { margin: 15px; }
-  button {
-    padding: 10px 20px;
-    border: none;
-    border-radius: 8px;
-    background: #38bdf8;
-    cursor: pointer;
-    margin: 5px;
-  }
+}
 </style>
 </head>
+
 <body>
 
 <div class="logo">SON PROJECT</div>
+
+<div class="score">
+  X: <span id="xScore">0</span> | O: <span id="oScore">0</span>
+</div>
+
+<div class="controls">
+  <button onclick="setMode('AI')">VS AI</button>
+  <button onclick="setMode('PVP')">2 Player</button>
+  <button onclick="resetBoard()">Reset</button>
+</div>
+
 <div class="board" id="board"></div>
-<div class="status" id="status">Giliran kamu (X)</div>
 
-<button onclick="toggleMusic()">🎵 Music</button>
-<button onclick="resetGame()">🔄 Reset</button>
+<div class="status" id="status">Giliran: X</div>
 
+<!-- MUSIC -->
 <audio id="bgm" loop>
-  <source src="about-you.mp3" type="audio/mpeg">
+  <source src="aboutyou.mp3" type="audio/mpeg">
 </audio>
 
 <script>
-const board = document.getElementById("board");
-const statusText = document.getElementById("status");
-const bgm = document.getElementById("bgm");
+/* ===== MUSIC (PELAAAAAN) ===== */
+document.addEventListener("click", () => {
+  const music = document.getElementById("bgm");
+  music.playbackRate = 0.85; // 🔥 lebih pelan
+  music.volume = 0;
+  music.play();
 
-let cells = Array(9).fill("");
-let gameOver = false;
-let musicPlaying = false;
+  let v = 0;
+  const fade = setInterval(() => {
+    v += 0.05;
+    music.volume = v;
+    if (v >= 0.6) clearInterval(fade);
+  }, 200);
+}, { once: true });
 
-bgm.volume = 0.5;
+/* ===== GAME LOGIC ===== */
+const boardEl = document.getElementById("board");
+const statusEl = document.getElementById("status");
 
-const winPatterns = [
-  [0,1,2],[3,4,5],[6,7,8],
-  [0,3,6],[1,4,7],[2,5,8],
-  [0,4,8],[2,4,6]
-];
+let board = Array(9).fill("");
+let currentPlayer = "X";
+let mode = "AI";
+let xScore = 0;
+let oScore = 0;
 
-function createBoard() {
-  board.innerHTML = "";
-  cells.forEach((c,i)=>{
+function setMode(m) {
+  mode = m;
+  resetBoard();
+}
+
+function resetBoard() {
+  board = Array(9).fill("");
+  currentPlayer = "X";
+  statusEl.innerText = "Giliran: X";
+  render();
+}
+
+function render() {
+  boardEl.innerHTML = "";
+  board.forEach((cell, i) => {
     const div = document.createElement("div");
     div.className = "cell";
-    div.innerText = c;
-    div.onclick = ()=>playerMove(i);
-    board.appendChild(div);
+    div.innerText = cell;
+    div.onclick = () => handleClick(i);
+    boardEl.appendChild(div);
   });
 }
 
-function playerMove(i) {
-  if (cells[i] || gameOver) return;
+function handleClick(i) {
+  if (board[i] !== "" || checkWinner()) return;
 
-  if (!musicPlaying) {
-    bgm.play();
-    musicPlaying = true;
-  }
+  board[i] = currentPlayer;
 
-  cells[i] = "X";
-  createBoard();
+  let winner = checkWinner();
+  if (winner) return endGame(winner);
 
-  if (checkWin("X")) {
-    statusText.innerText = "Kamu MENANG 🎉";
-    gameOver = true;
-    return;
-  }
-
-  setTimeout(aiMove, 400);
-}
-
-function aiMove() {
-  let move = cells.findIndex(c => c === "");
-  if (move === -1) return;
-
-  cells[move] = "O";
-  createBoard();
-
-  if (checkWin("O")) {
-    statusText.innerText = "AI MENANG 🤖";
-    gameOver = true;
-    return;
-  }
-}
-
-function checkWin(p) {
-  return winPatterns.some(w => w.every(i => cells[i] === p));
-}
-
-function resetGame() {
-  cells = Array(9).fill("");
-  gameOver = false;
-  statusText.innerText = "Giliran kamu (X)";
-  createBoard();
-}
-
-function toggleMusic() {
-  if (musicPlaying) {
-    bgm.pause();
-    musicPlaying = false;
+  if (mode === "AI" && currentPlayer === "X") {
+    currentPlayer = "O";
+    bestMove();
+    winner = checkWinner();
+    if (winner) return endGame(winner);
+    currentPlayer = "X";
   } else {
-    bgm.play();
-    musicPlaying = true;
+    currentPlayer = currentPlayer === "X" ? "O" : "X";
+  }
+
+  statusEl.innerText = "Giliran: " + currentPlayer;
+  render();
+}
+
+function endGame(winner) {
+  if (winner === "tie") {
+    statusEl.innerText = "Seri!";
+  } else {
+    statusEl.innerText = winner + " Menang!";
+    if (winner === "X") xScore++;
+    if (winner === "O") oScore++;
+    document.getElementById("xScore").innerText = xScore;
+    document.getElementById("oScore").innerText = oScore;
+  }
+  render();
+}
+
+function checkWinner() {
+  const wins = [
+    [0,1,2],[3,4,5],[6,7,8],
+    [0,3,6],[1,4,7],[2,5,8],
+    [0,4,8],[2,4,6]
+  ];
+  for (let w of wins) {
+    const [a,b,c] = w;
+    if (board[a] && board[a] === board[b] && board[a] === board[c])
+      return board[a];
+  }
+  if (!board.includes("")) return "tie";
+  return null;
+}
+
+/* ===== AI (MINIMAX) ===== */
+function bestMove() {
+  let bestScore = -Infinity;
+  let move;
+  for (let i = 0; i < 9; i++) {
+    if (board[i] === "") {
+      board[i] = "O";
+      let score = minimax(board, 0, false);
+      board[i] = "";
+      if (score > bestScore) {
+        bestScore = score;
+        move = i;
+      }
+    }
+  }
+  board[move] = "O";
+}
+
+const scores = { X: -10, O: 10, tie: 0 };
+
+function minimax(newBoard, depth, isMax) {
+  let result = checkWinner();
+  if (result) return scores[result];
+
+  if (isMax) {
+    let best = -Infinity;
+    for (let i = 0; i < 9; i++) {
+      if (newBoard[i] === "") {
+        newBoard[i] = "O";
+        best = Math.max(best, minimax(newBoard, depth + 1, false));
+        newBoard[i] = "";
+      }
+    }
+    return best;
+  } else {
+    let best = Infinity;
+    for (let i = 0; i < 9; i++) {
+      if (newBoard[i] === "") {
+        newBoard[i] = "X";
+        best = Math.min(best, minimax(newBoard, depth + 1, true));
+        newBoard[i] = "";
+      }
+    }
+    return best;
   }
 }
 
-createBoard();
+render();
 </script>
+
 </body>
 </html>
