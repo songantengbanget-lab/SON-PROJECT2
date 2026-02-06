@@ -18,8 +18,14 @@ body {
   font-family: Arial, sans-serif;
 }
 
-.logo {
-  font-size: 2rem;
+.logo-img {
+  width: 120px;
+  margin-bottom: 6px;
+  filter: drop-shadow(0 0 15px #00f7ff);
+}
+
+.logo-text {
+  font-size: 1.8rem;
   font-weight: bold;
   color: #00f7ff;
   text-shadow: 0 0 15px #00f7ff;
@@ -88,7 +94,8 @@ button {
 
 <body>
 
-<div class="logo">SON PROJECT</div>
+<img src="logo.png" class="logo-img" alt="SON PROJECT Logo">
+<div class="logo-text">SON PROJECT</div>
 
 <div class="score">
   X: <span id="xScore">0</span> | O: <span id="oScore">0</span>
@@ -110,10 +117,10 @@ button {
 </audio>
 
 <script>
-/* ===== MUSIC (PELAAAAAN) ===== */
+/* ===== MUSIC (PELAAAAAN & SMOOTH) ===== */
 document.addEventListener("click", () => {
   const music = document.getElementById("bgm");
-  music.playbackRate = 0.85; // 🔥 lebih pelan
+  music.playbackRate = 0.85;
   music.volume = 0;
   music.play();
 
@@ -125,7 +132,7 @@ document.addEventListener("click", () => {
   }, 200);
 }, { once: true });
 
-/* ===== GAME LOGIC ===== */
+/* ===== GAME ===== */
 const boardEl = document.getElementById("board");
 const statusEl = document.getElementById("status");
 
@@ -199,8 +206,7 @@ function checkWinner() {
     [0,3,6],[1,4,7],[2,5,8],
     [0,4,8],[2,4,6]
   ];
-  for (let w of wins) {
-    const [a,b,c] = w;
+  for (let [a,b,c] of wins) {
     if (board[a] && board[a] === board[b] && board[a] === board[c])
       return board[a];
   }
