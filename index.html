@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Tic Tac Toe AI - SON PROJECT</title>
+<style>
+  body {
+    margin: 0;
+    height: 100vh;
+    background: #020617;
+    color: white;
+    font-family: Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .logo {
+    font-size: 32px;
+    font-weight: bold;
+    color: #38bdf8;
+    margin-bottom: 10px;
+    letter-spacing: 3px;
+  }
+  .board {
+    display: grid;
+    grid-template-columns: repeat(3, 100px);
+    gap: 10px;
+  }
+  .cell {
+    width: 100px;
+    height: 100px;
+    background: #1e293b;
+    border-radius: 12px;
+    font-size: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+  .cell:hover { background: #334155; }
+  .status { margin: 15px; }
+  button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    background: #38bdf8;
+    cursor: pointer;
+    margin: 5px;
+  }
+</style>
+</head>
+<body>
+
+<div class="logo">SON PROJECT</div>
+<div class="board" id="board"></div>
+<div class="status" id="status">Giliran kamu (X)</div>
+
+<button onclick="toggleMusic()">🎵 Music</button>
+<button onclick="resetGame()">🔄 Reset</button>
+
+<audio id="bgm" loop>
+  <source src="about-you.mp3" type="audio/mpeg">
+</audio>
+
+<script>
+const board = document.getElementById("board");
+const statusText = document.getElementById("status");
+const bgm = document.getElementById("bgm");
+
+let cells = Array(9).fill("");
+let gameOver = false;
+let musicPlaying = false;
+
+bgm.volume = 0.5;
+
+const winPatterns = [
+  [0,1,2],[3,4,5],[6,7,8],
+  [0,3,6],[1,4,7],[2,5,8],
+  [0,4,8],[2,4,6]
+];
+
+function createBoard() {
+  board.innerHTML = "";
+  cells.forEach((c,i)=>{
+    const div = document.createElement("div");
+    div.className = "cell";
+    div.innerText = c;
+    div.onclick = ()=>playerMove(i);
+    board.appendChild(div);
+  });
+}
+
+function playerMove(i) {
+  if (cells[i] || gameOver) return;
+
+  if (!musicPlaying) {
+    bgm.play();
+    musicPlaying = true;
+  }
+
+  cells[i] = "X";
+  createBoard();
+
+  if (checkWin("X")) {
+    statusText.innerText = "Kamu MENANG 🎉";
+    gameOver = true;
+    return;
+  }
+
+  setTimeout(aiMove, 400);
+}
+
+function aiMove() {
+  let move = cells.findIndex(c => c === "");
+  if (move === -1) return;
+
+  cells[move] = "O";
+  createBoard();
+
+  if (checkWin("O")) {
+    statusText.innerText = "AI MENANG 🤖";
+    gameOver = true;
+    return;
+  }
+}
+
+function checkWin(p) {
+  return winPatterns.some(w => w.every(i => cells[i] === p));
+}
+
+function resetGame() {
+  cells = Array(9).fill("");
+  gameOver = false;
+  statusText.innerText = "Giliran kamu (X)";
+  createBoard();
+}
+
+function toggleMusic() {
+  if (musicPlaying) {
+    bgm.pause();
+    musicPlaying = false;
+  } else {
+    bgm.play();
+    musicPlaying = true;
+  }
+}
+
+createBoard();
+</script>
+</body>
+</html>
